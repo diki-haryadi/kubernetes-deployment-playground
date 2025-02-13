@@ -109,3 +109,43 @@ If the console service is running, you can access it at:
 - If running on a remote machine: `http://<node-ip>:<NodePort>`
 
 Would you like me to help check if the console service is ready and get its access URL?
+
+
+I see that despite the playbook error, some components are starting up. Let's analyze the current state:
+
+1. Console is running (good!)
+2. API server and controller manager are still creating (may need investigation)
+
+Let's check why these pods are stuck in ContainerCreating:
+
+1. Check detailed status of the apiserver:
+```bash
+kubectl describe pod -n kubesphere-system ks-apiserver-84f59487-7vqbm
+```
+
+2. Check controller manager status:
+```bash
+kubectl describe pod -n kubesphere-system ks-controller-manager-6d776dc869-m56xc
+```
+
+3. Check the console service (since it's running, we might be able to access it):
+```bash
+kubectl get svc/ks-console -n kubesphere-system
+```
+
+The console pod is running, so we might be able to access the web interface. To access it:
+
+1. Get the NodePort:
+```bash
+kubectl get svc -n kubesphere-system ks-console -o jsonpath='{.spec.ports[0].nodePort}'
+```
+
+2. Access URL should be:
+- If using Colima: `http://<colima-ip>:<nodePort>`
+- If local: `http://localhost:<nodePort>`
+
+Default credentials:
+- Username: `admin`
+- Password: `P@88w0rd`
+
+Would you like me to help analyze why the other pods are stuck in ContainerCreating?
