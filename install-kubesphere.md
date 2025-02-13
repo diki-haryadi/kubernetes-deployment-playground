@@ -149,3 +149,54 @@ Default credentials:
 - Password: `P@88w0rd`
 
 Would you like me to help analyze why the other pods are stuck in ContainerCreating?
+
+
+I see the issue - both pods are failing because they can't find the required "kubesphere-config" ConfigMap. Let's create it:
+
+1. Create the necessary ConfigMap:
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubesphere-config
+  namespace: kubesphere-system
+data:
+  kubesphere.yaml: |
+    authentication:
+      jwtSecret: ""
+      maximumClockSkew: 10s
+    ldap:
+      host: openldap.kubesphere-system.svc:389
+      managerDN: cn=admin,dc=kubesphere,dc=io
+      managerPassword: admin
+      userSearchBase: ou=Users,dc=kubesphere,dc=io
+      groupSearchBase: ou=Groups,dc=kubesphere,dc=io
+    redis:
+      host: redis.kubesphere-system.svc
+      port: 6379
+      password: ""
+      db: 0
+    s3:
+      endpoint: http://minio.kubesphere-system.svc:9000
+      region: us-east-1
+      disableSSL: true
+      forcePathStyle: true
+      accessKeyID: openpitrix-access-key
+      secretAccessKey: openpitrix-secret-key
+      bucket: s2i-binaries
+EOF
+```
+
+2. Then restart the pods:
+```bash
+kubectl delete pod -n kubesphere-system ks-apiserver-84f59487-7vqbm
+kubectl delete pod -n kubesphere-system ks-controller-manager-6d776dc869-m56xc
+```
+
+3. Monitor the pods:
+```bash
+kubectl get pods -n kubesphere-system -w
+```
+
+
